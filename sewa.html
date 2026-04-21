@@ -25,65 +25,32 @@ body{
   box-shadow:0 20px 40px rgba(0,0,0,.2);
 }
 
-/* TITLE */
-h2{
-  text-align:center;
-  margin-bottom:10px;
-}
+h2{text-align:center;margin-bottom:10px;}
+.subtitle{text-align:center;font-size:12px;color:#777;margin-bottom:20px;}
 
-.subtitle{
-  text-align:center;
-  font-size:12px;
-  color:#777;
-  margin-bottom:20px;
-}
-
-/* STEP */
-.steps{
-  display:flex;
-  justify-content:center;
-  gap:10px;
-  margin-bottom:20px;
-}
+.steps{display:flex;justify-content:center;gap:10px;margin-bottom:20px;}
 .step{
   width:28px;height:28px;border-radius:50%;
-  background:#ddd;
-  display:flex;align-items:center;justify-content:center;
+  background:#ddd;display:flex;align-items:center;justify-content:center;
   font-size:13px;
 }
 .step.active{background:#667eea;color:#fff;}
 .step.done{background:#22c55e;color:#fff;}
 
-/* FORM */
 .form-group{margin-bottom:14px}
 
-label{
-  display:block;
-  font-size:13px;
-  margin-bottom:4px;
-  color:#555;
-}
+label{font-size:13px;color:#555}
 
-input,select{
+input,select,textarea{
   width:100%;
   padding:11px;
   border-radius:10px;
   border:1px solid #ddd;
-  font-size:14px;
+  margin-top:4px;
 }
 
-input:focus,select:focus{
-  border-color:#667eea;
-  outline:none;
-}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 
-.row{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-
-/* BUTTON */
 .btn{
   width:100%;
   padding:13px;
@@ -102,21 +69,33 @@ input:focus,select:focus{
   color:#667eea;
 }
 
-/* ALERT */
-.alert{
-  font-size:12px;
-  color:red;
-  margin-bottom:10px;
-}
+.alert{font-size:12px;color:red;margin-bottom:10px;}
 
-/* QRIS */
-.qris{
-  width:100%;
-  border-radius:15px;
-  margin-bottom:10px;
-}
+.qris{width:100%;border-radius:15px;margin-bottom:10px;}
 
 .hidden{display:none}
+
+/* SUCCESS */
+.success-box{
+  text-align:center;
+}
+.success-box h3{
+  color:#22c55e;
+  margin-bottom:10px;
+}
+.loader{
+  border:4px solid #eee;
+  border-top:4px solid #667eea;
+  border-radius:50%;
+  width:30px;
+  height:30px;
+  animation:spin 1s linear infinite;
+  margin:10px auto;
+}
+@keyframes spin{
+  0%{transform:rotate(0deg)}
+  100%{transform:rotate(360deg)}
+}
 </style>
 </head>
 
@@ -179,6 +158,12 @@ input:focus,select:focus{
 </div>
 </div>
 
+<!-- 🔥 TAMBAHAN KETERANGAN -->
+<div class="form-group">
+<label>Keterangan</label>
+<textarea id="keterangan" rows="2" placeholder="Contoh: Turnamen ABCD"></textarea>
+</div>
+
 <button class="btn" onclick="cek()">Cek Ketersediaan</button>
 
 </div>
@@ -192,9 +177,21 @@ input:focus,select:focus{
 
 <input type="file" id="bukti">
 
-<button class="btn" onclick="submit()">✅ Bayar & Booking</button>
+<button class="btn" id="btnSubmit" onclick="submit()">✅ Bayar & Booking</button>
 <button class="btn btn-outline" onclick="back()">← Kembali</button>
 
+<div id="loading" class="hidden">
+  <div class="loader"></div>
+  <p style="text-align:center;font-size:12px">Menyimpan data...</p>
+</div>
+
+</div>
+
+<!-- SUCCESS -->
+<div id="success" class="hidden success-box">
+  <h3>✅ Data berhasil dikirim</h3>
+  <p>Terima kasih sudah melakukan booking</p>
+  <button class="btn" onclick="goHome()">🏠 Kembali ke Beranda</button>
 </div>
 
 </div>
@@ -209,20 +206,14 @@ function toMin(t){
   return parseInt(p[0])*60 + parseInt(p[1]);
 }
 
-// LOAD TANGGAL FULL
 async function loadTanggal(){
- let r=await fetch(API,{
-   method:"POST",
-   body:JSON.stringify({action:"tanggal"})
- });
+ let r=await fetch(API,{method:"POST",body:JSON.stringify({action:"tanggal"})});
  let d=await r.json();
  fullDates=d.data;
 }
 
-// VALIDASI RANGE
 function cekTanggal(){
-
- if(!tanggalMulai.value || !tanggalSelesai.value) return;
+ if(!tanggalMulai.value||!tanggalSelesai.value) return;
 
  let s=new Date(tanggalMulai.value);
  let e=new Date(tanggalSelesai.value);
@@ -233,13 +224,9 @@ function cekTanggal(){
  }
 
  let cur=new Date(s);
-
  while(cur<=e){
   if(fullDates.includes(cur.toDateString())){
     warning.innerHTML="❌ Ada tanggal penuh";
-    tanggalMulai.value="";
-    tanggalSelesai.value="";
-    renderJam([]);
     return;
   }
   cur.setDate(cur.getDate()+1);
@@ -252,7 +239,6 @@ function cekTanggal(){
 tanggalMulai.onchange=cekTanggal;
 tanggalSelesai.onchange=cekTanggal;
 
-// LOAD JAM
 async function loadJam(){
  let r=await fetch(API,{
   method:"POST",
@@ -262,33 +248,24 @@ async function loadJam(){
     lapangan:lapangan.value
   })
  });
-
  let d=await r.json();
  renderJam(d.data);
 }
 
-// RENDER JAM
 function renderJam(block){
  let html="";
-
  for(let i=7;i<=22;i++){
   let j=(i<10?"0":"")+i+":00";
   let dis=false;
-
   block.forEach(b=>{
-    if(toMin(j)>=toMin(b.start) && toMin(j)<toMin(b.end)){
-      dis=true;
-    }
+    if(toMin(j)>=toMin(b.start)&&toMin(j)<toMin(b.end)) dis=true;
   });
-
   html+=`<option ${dis?"disabled":""}>${j}</option>`;
  }
-
  jamMulai.innerHTML=html;
  jamSelesai.innerHTML=html;
 }
 
-// AMBIL DATA
 function ambil(){
  return {
   nama:nama.value,
@@ -297,18 +274,13 @@ function ambil(){
   tanggalSelesai:tanggalSelesai.value,
   jamMulai:jamMulai.value,
   jamSelesai:jamSelesai.value,
-  lapangan:lapangan.value
+  lapangan:lapangan.value,
+  keterangan:keterangan.value
  }
 }
 
-// CEK
 async function cek(){
  data=ambil();
-
- if(!data.nama || !data.nohp){
-  alert("Lengkapi data!");
-  return;
- }
 
  let r=await fetch(API,{
   method:"POST",
@@ -320,8 +292,6 @@ async function cek(){
  if(d.status==="available"){
   step1.classList.add("hidden");
   step2.classList.remove("hidden");
-
-  s1.classList.remove("active");
   s1.classList.add("done");
   s2.classList.add("active");
  }else{
@@ -329,23 +299,18 @@ async function cek(){
  }
 }
 
-// BACK
 function back(){
  step2.classList.add("hidden");
  step1.classList.remove("hidden");
-
- s2.classList.remove("active");
- s1.classList.add("active");
 }
 
-// SUBMIT
 async function submit(){
- let file=bukti.files[0];
 
- if(!file){
-  alert("Upload bukti dulu!");
-  return;
- }
+ let file=bukti.files[0];
+ if(!file){ alert("Upload bukti dulu!"); return; }
+
+ document.getElementById("btnSubmit").style.display="none";
+ document.getElementById("loading").classList.remove("hidden");
 
  let reader=new FileReader();
 
@@ -358,14 +323,19 @@ async function submit(){
   });
 
   let d=await r.json();
-  alert(d.message);
-  location.reload();
+
+  document.getElementById("loading").classList.add("hidden");
+  document.getElementById("step2").classList.add("hidden");
+  document.getElementById("success").classList.remove("hidden");
  };
 
  reader.readAsDataURL(file);
 }
 
-// INIT
+function goHome(){
+  location.href="index.html";
+}
+
 loadTanggal();
 renderJam([]);
 </script>
