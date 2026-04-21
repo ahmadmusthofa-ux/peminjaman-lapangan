@@ -1,0 +1,128 @@
+<h2>Booking</h2>
+
+<input id="nama" placeholder="Nama">
+<input id="nohp" placeholder="HP">
+
+<input type="date" id="tanggalMulai">
+<div id="warning"></div>
+
+<select id="lapangan">
+<option>Lapangan Basket</option>
+<option>Lapangan Sepakbola</option>
+</select>
+
+<select id="jamMulai"></select>
+<select id="jamSelesai"></select>
+
+<button onclick="cek()">Cek</button>
+
+<div id="step2" style="display:none">
+<img src="https://i.ibb.co/3WQd9rP/qris.png" width="200">
+<input type="file" id="bukti">
+<button onclick="submit()">Bayar & Booking</button>
+</div>
+
+<script>
+const API = "https://script.google.com/macros/s/AKfycbx24Z-3mlubF4V84Jg8eB_WYX9PysYiLne96a-MMbPhz_6ovGsney-heoibrwaovChf/exec";
+
+let data={};
+let fullDates=[];
+
+function toMin(t){let p=t.split(":");return p[0]*60}
+
+// LOAD TANGGAL FULL
+async function loadTanggal(){
+  let r=await fetch(API,{method:"POST",body:JSON.stringify({action:"tanggal"})});
+  let d=await r.json();
+  fullDates=d.data;
+}
+
+tanggalMulai.onchange=()=>{
+  let t=new Date(tanggalMulai.value).toDateString();
+  if(fullDates.includes(t)){
+    warning.innerHTML="❌ Tanggal penuh";
+    tanggalMulai.value="";
+    return;
+  }
+  loadJam();
+};
+
+// LOAD JAM
+async function loadJam(){
+  let r=await fetch(API,{
+    method:"POST",
+    body:JSON.stringify({
+      action:"jam",
+      tanggalMulai:tanggalMulai.value,
+      lapangan:lapangan.value
+    })
+  });
+
+  let d=await r.json();
+  renderJam(d.data);
+}
+
+function renderJam(block){
+  let html="";
+  for(let i=7;i<=22;i++){
+    let j=(i<10?"0":"")+i+":00";
+    let disabled=false;
+
+    block.forEach(b=>{
+      if(toMin(j)>=toMin(b.start)&&toMin(j)<toMin(b.end)){
+        disabled=true;
+      }
+    });
+
+    html+=`<option ${disabled?"disabled":""}>${j} ${disabled?"❌":""}</option>`;
+  }
+  jamMulai.innerHTML=html;
+  jamSelesai.innerHTML=html;
+}
+
+function ambil(){
+  return {
+    nama:nama.value,
+    nohp:nohp.value,
+    tanggalMulai:tanggalMulai.value,
+    tanggalSelesai:tanggalMulai.value,
+    jamMulai:jamMulai.value,
+    jamSelesai:jamSelesai.value,
+    lapangan:lapangan.value
+  }
+}
+
+async function cek(){
+  data=ambil();
+  let r=await fetch(API,{method:"POST",body:JSON.stringify({...data,action:"check"})});
+  let d=await r.json();
+
+  if(d.status==="available"){
+    step2.style.display="block";
+  }else{
+    alert(d.message);
+  }
+}
+
+async function submit(){
+  let file=bukti.files[0];
+  let reader=new FileReader();
+
+  reader.onload=async ()=>{
+    data.bukti=reader.result;
+
+    let r=await fetch(API,{
+      method:"POST",
+      body:JSON.stringify({...data,action:"submit"})
+    });
+
+    let d=await r.json();
+    alert(d.message);
+    location.reload();
+  };
+
+  reader.readAsDataURL(file);
+}
+
+loadTanggal();
+</script>
