@@ -1,25 +1,207 @@
-<h2>Jadwal</h2>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jadwal Booking</title>
 
-<div id="list"></div>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
+
+body{
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  padding:20px;
+}
+
+.card{
+  background:#fff;
+  width:100%;
+  max-width:500px;
+  border-radius:20px;
+  padding:20px;
+  box-shadow:0 20px 40px rgba(0,0,0,.2);
+}
+
+h2{
+  text-align:center;
+  margin-bottom:10px;
+}
+
+.subtitle{
+  text-align:center;
+  font-size:12px;
+  color:#777;
+  margin-bottom:15px;
+}
+
+/* FILTER */
+.filter{
+  display:flex;
+  gap:10px;
+  margin-bottom:15px;
+}
+
+input{
+  flex:1;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #ddd;
+}
+
+.btn{
+  padding:10px 12px;
+  border:none;
+  border-radius:10px;
+  background:#667eea;
+  color:#fff;
+  cursor:pointer;
+}
+
+/* LIST */
+.list{
+  margin-top:10px;
+}
+
+.item{
+  background:#f9f9f9;
+  padding:12px;
+  border-radius:12px;
+  margin-bottom:10px;
+  box-shadow:0 5px 15px rgba(0,0,0,.1);
+  font-size:13px;
+  transition:.2s;
+}
+
+.item:hover{
+  transform:translateY(-2px);
+}
+
+.badge{
+  display:inline-block;
+  padding:3px 8px;
+  border-radius:8px;
+  font-size:11px;
+  background:#667eea;
+  color:#fff;
+}
+
+.empty{
+  text-align:center;
+  font-size:13px;
+  color:#888;
+  margin-top:20px;
+}
+
+.back{
+  margin-top:10px;
+  width:100%;
+  background:#fff;
+  border:1px solid #667eea;
+  color:#667eea;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<h2>📅 Jadwal Lapangan</h2>
+<div class="subtitle">Cari & filter jadwal booking</div>
+
+<div class="filter">
+  <input type="text" id="search" placeholder="Cari nama / lapangan...">
+  <input type="date" id="tanggal">
+</div>
+
+<button class="btn" onclick="load()">🔍 Tampilkan</button>
+
+<div id="list" class="list"></div>
+
+<button class="btn back" onclick="back()">← Kembali</button>
+
+</div>
 
 <script>
 const API="URL_WEB_APP";
 
-async function load(){
-  let r=await fetch(API,{method:"POST",body:JSON.stringify({action:"jadwal"})});
-  let d=await r.json();
+let semuaData=[];
 
-  let html="";
-  d.data.forEach(i=>{
-    html+=`
-    <div>
-      ${i.lapangan} | ${i.nama}<br>
-      ${i.jamMulai} - ${i.jamSelesai}
-    </div><hr>`;
+// FORMAT TANGGAL
+function formatTanggal(t){
+  let d = new Date(t);
+  return d.toLocaleDateString("id-ID",{
+    day:'2-digit',
+    month:'short',
+    year:'numeric'
   });
-
-  list.innerHTML=html;
 }
 
+// LOAD DATA
+async function load(){
+  const res = await fetch(API,{
+    method:"POST",
+    body:JSON.stringify({action:"jadwal"})
+  });
+
+  const d = await res.json();
+  semuaData = d.data;
+
+  render();
+}
+
+// RENDER
+function render(){
+  const keyword = search.value.toLowerCase();
+  const tgl = tanggal.value;
+
+  let html = "";
+
+  let filtered = semuaData.filter(i=>{
+
+    let matchSearch =
+      i.nama.toLowerCase().includes(keyword) ||
+      i.lapangan.toLowerCase().includes(keyword);
+
+    let matchTanggal = true;
+
+    if(tgl){
+      let t = new Date(i.tanggal).toISOString().split("T")[0];
+      matchTanggal = (t === tgl);
+    }
+
+    return matchSearch && matchTanggal;
+  });
+
+  filtered.forEach(i=>{
+    html += `
+    <div class="item">
+      <div class="badge">${i.lapangan}</div><br>
+      👤 ${i.nama}<br>
+      📅 ${formatTanggal(i.tanggal)}<br>
+      ⏰ ${i.jamMulai} - ${i.jamSelesai}
+    </div>
+    `;
+  });
+
+  list.innerHTML = html || `<div class="empty">Tidak ada data</div>`;
+}
+
+// AUTO SEARCH
+search.addEventListener("input", render);
+tanggal.addEventListener("change", render);
+
+function back(){
+  location.href="index.html";
+}
+
+// INIT
 load();
 </script>
+
+</body>
+</html>
