@@ -1,0 +1,25 @@
+<h2>Jadwal</h2>
+
+<div id="list"></div>
+
+<script>
+const API="URL_WEB_APP";
+
+async function load(){
+  let r=await fetch(API,{method:"POST",body:JSON.stringify({action:"jadwal"})});
+  let d=await r.json();
+
+  let html="";
+  d.data.forEach(i=>{
+    html+=`
+    <div>
+      ${i.lapangan} | ${i.nama}<br>
+      ${i.jamMulai} - ${i.jamSelesai}
+    </div><hr>`;
+  });
+
+  list.innerHTML=html;
+}
+
+load();
+</script>
