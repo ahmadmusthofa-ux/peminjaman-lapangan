@@ -6,103 +6,69 @@
 <title>Jadwal Booking</title>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
+*{box-sizing:border-box;font-family:'Segoe UI',sans-serif}
 
 body{
+  margin:0;
   background:linear-gradient(135deg,#667eea,#764ba2);
-  min-height:100vh;
-  display:flex;
-  justify-content:center;
   padding:20px;
 }
 
 .card{
   background:#fff;
-  width:100%;
-  max-width:500px;
+  max-width:600px;
+  margin:auto;
+  padding:25px;
   border-radius:20px;
-  padding:20px;
-  box-shadow:0 20px 40px rgba(0,0,0,.2);
+  box-shadow:0 20px 40px rgba(0,0,0,0.2);
 }
 
 h2{
   text-align:center;
-  margin-bottom:10px;
-}
-
-.subtitle{
-  text-align:center;
-  font-size:12px;
-  color:#777;
   margin-bottom:15px;
 }
 
 /* FILTER */
 .filter{
-  display:flex;
+  display:grid;
+  grid-template-columns:1fr 1fr;
   gap:10px;
   margin-bottom:15px;
 }
 
 input{
-  flex:1;
   padding:10px;
   border-radius:10px;
   border:1px solid #ddd;
+  width:100%;
 }
 
-.btn{
-  padding:10px 12px;
-  border:none;
-  border-radius:10px;
-  background:#667eea;
-  color:#fff;
-  cursor:pointer;
-}
-
-/* LIST */
-.list{
-  margin-top:10px;
-}
-
+/* ITEM */
 .item{
-  background:#f9f9f9;
+  background:#f9fafc;
   padding:12px;
   border-radius:12px;
   margin-bottom:10px;
-  box-shadow:0 5px 15px rgba(0,0,0,.1);
-  font-size:13px;
-  transition:.2s;
-}
-
-.item:hover{
-  transform:translateY(-2px);
+  border-left:5px solid #667eea;
 }
 
 .badge{
   display:inline-block;
-  padding:3px 8px;
-  border-radius:8px;
-  font-size:11px;
   background:#667eea;
   color:#fff;
+  font-size:11px;
+  padding:3px 8px;
+  border-radius:8px;
+  margin-bottom:5px;
 }
+
+small{color:#666}
 
 .empty{
   text-align:center;
-  font-size:13px;
-  color:#888;
+  color:#777;
   margin-top:20px;
 }
-
-.back{
-  margin-top:10px;
-  width:100%;
-  background:#fff;
-  border:1px solid #667eea;
-  color:#667eea;
-}
-
 </style>
 </head>
 
@@ -110,91 +76,112 @@ input{
 
 <div class="card">
 
-<h2>📅 Jadwal Lapangan</h2>
-<div class="subtitle">Cari & filter jadwal booking</div>
+<h2>📅 Jadwal Booking</h2>
 
 <div class="filter">
-  <input type="text" id="search" placeholder="Cari nama / lapangan...">
+  <input id="search" placeholder="Cari nama / lapangan...">
   <input type="date" id="tanggal">
 </div>
 
-<button class="btn" onclick="load()">🔍 Tampilkan</button>
+<div id="list"></div>
 
-<div id="list" class="list"></div>
-
-<button class="btn back" onclick="back()">← Kembali</button>
+<button onclick="back()" style="
+margin-top:10px;
+width:100%;
+padding:12px;
+border:none;
+border-radius:10px;
+background:#fff;
+border:1px solid #667eea;
+color:#667eea;
+cursor:pointer">
+← Kembali
+</button>
 
 </div>
 
 <script>
-const API="https://script.google.com/macros/s/AKfycbx24Z-3mlubF4V84Jg8eB_WYX9PysYiLne96a-MMbPhz_6ovGsney-heoibrwaovChf/exec";
+const API="https://script.google.com/macros/s/AKfycbx24Z-3mlubF4V84Jg8eB_WYX9PysYiLne96a-MMbPhz_6ovGsney-heoibrwaovChf/exec"; // <-- GANTI
 
-let semuaData=[];
-
-// FORMAT TANGGAL
-function formatTanggal(t){
-  let d = new Date(t);
-  return d.toLocaleDateString("id-ID",{
-    day:'2-digit',
-    month:'short',
-    year:'numeric'
-  });
-}
+let all=[];
 
 // LOAD DATA
 async function load(){
-  const res = await fetch(API,{
+
+  let r=await fetch(API,{
     method:"POST",
     body:JSON.stringify({action:"jadwal"})
   });
 
-  const d = await res.json();
-  semuaData = d.data;
+  let d=await r.json();
 
+  if(d.status!=="success"){
+    list.innerHTML="<div class='empty'>❌ Gagal load data</div>";
+    return;
+  }
+
+  all=d.data;
   render();
 }
 
-// RENDER
-function render(){
-  const keyword = search.value.toLowerCase();
-  const tgl = tanggal.value;
+// FORMAT TANGGAL (FIX INVALID DATE)
+function formatTanggal(t){
+  if(!t) return "-";
 
-  let html = "";
+  try{
+    let d=new Date(t);
+    if(isNaN(d)) return "-";
 
-  let filtered = semuaData.filter(i=>{
-
-    let matchSearch =
-      i.nama.toLowerCase().includes(keyword) ||
-      i.lapangan.toLowerCase().includes(keyword);
-
-    let matchTanggal = true;
-
-    if(tgl){
-      let t = new Date(i.tanggal).toISOString().split("T")[0];
-      matchTanggal = (t === tgl);
-    }
-
-    return matchSearch && matchTanggal;
-  });
-
-  filtered.forEach(i=>{
-    html += `
-    <div class="item">
-      <div class="badge">${i.lapangan}</div><br>
-      👤 ${i.nama}<br>
-      📅 ${formatTanggal(i.tanggal)}<br>
-      ⏰ ${i.jamMulai} - ${i.jamSelesai}
-    </div>
-    `;
-  });
-
-  list.innerHTML = html || `<div class="empty">Tidak ada data</div>`;
+    return d.toLocaleDateString("id-ID",{
+      day:"2-digit",
+      month:"long",
+      year:"numeric"
+    });
+  }catch{
+    return "-";
+  }
 }
 
-// AUTO SEARCH
-search.addEventListener("input", render);
-tanggal.addEventListener("change", render);
+// RENDER DATA
+function render(){
 
+  let key = search.value.toLowerCase();
+  let tgl = tanggal.value;
+
+  let html="";
+
+  all.forEach(i=>{
+
+    let cocok =
+      (i.nama||"").toLowerCase().includes(key) ||
+      (i.lapangan||"").toLowerCase().includes(key);
+
+    // FILTER TANGGAL
+    if(tgl){
+      let d = i.tanggalMulai;
+      if(d !== tgl) cocok=false;
+    }
+
+    if(cocok){
+      html += `
+      <div class="item">
+        <div class="badge">${i.lapangan}</div>
+        <div><b>👤 ${i.nama}</b></div>
+        <small>📅 ${formatTanggal(i.tanggalMulai)} s/d ${formatTanggal(i.tanggalSelesai)}</small><br>
+        <small>⏰ ${i.jamMulai} - ${i.jamSelesai}</small>
+      </div>`;
+    }
+
+  });
+
+  list.innerHTML = html || "<div class='empty'>Tidak ada data</div>";
+}
+
+// EVENT
+search.oninput = render;
+tanggal.onchange = render;
+
+// BACK
 function back(){
   location.href="index.html";
 }
