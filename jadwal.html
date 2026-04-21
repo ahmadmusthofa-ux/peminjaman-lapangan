@@ -11,21 +11,31 @@
 body{
   margin:0;
   background:linear-gradient(135deg,#667eea,#764ba2);
-  padding:20px;
+  min-height:100vh;
+}
+
+/* HEADER */
+.header{
+  color:#fff;
+  padding:30px 20px;
+  text-align:center;
+}
+.header h1{margin:0;font-size:22px}
+.header p{font-size:13px;opacity:.8}
+
+/* CARD */
+.container{
+  max-width:700px;
+  margin:-20px auto 20px;
+  padding:0 15px;
 }
 
 .card{
-  background:#fff;
-  max-width:600px;
-  margin:auto;
-  padding:25px;
+  background:rgba(255,255,255,0.95);
+  backdrop-filter:blur(10px);
   border-radius:20px;
+  padding:20px;
   box-shadow:0 20px 40px rgba(0,0,0,0.2);
-}
-
-h2{
-  text-align:center;
-  margin-bottom:15px;
 }
 
 /* FILTER */
@@ -43,150 +53,184 @@ input{
   width:100%;
 }
 
-/* ITEM */
+/* LIST */
 .item{
-  background:#f9fafc;
-  padding:12px;
-  border-radius:12px;
-  margin-bottom:10px;
-  border-left:5px solid #667eea;
+  position:relative;
+  background:#fff;
+  padding:15px;
+  border-radius:14px;
+  margin-bottom:12px;
+  box-shadow:0 10px 20px rgba(0,0,0,0.08);
+  transition:.3s;
 }
 
+.item:hover{
+  transform:translateY(-3px);
+}
+
+/* BADGE */
 .badge{
   display:inline-block;
-  background:#667eea;
-  color:#fff;
   font-size:11px;
-  padding:3px 8px;
-  border-radius:8px;
-  margin-bottom:5px;
+  padding:4px 10px;
+  border-radius:20px;
+  margin-bottom:6px;
+  color:#fff;
 }
 
-small{color:#666}
+.basket{background:#22c55e}
+.sepak{background:#3b82f6}
 
+/* TEXT */
+.nama{font-weight:bold;font-size:14px}
+.info{font-size:12px;color:#666;margin-top:3px}
+
+/* EMPTY */
 .empty{
   text-align:center;
+  padding:20px;
   color:#777;
-  margin-top:20px;
+}
+
+/* BUTTON */
+.btn{
+  margin-top:10px;
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:12px;
+  background:#667eea;
+  color:#fff;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+/* LOADING */
+.skeleton{
+  height:60px;
+  border-radius:10px;
+  margin-bottom:10px;
+  background:linear-gradient(90deg,#eee,#ddd,#eee);
+  animation:loading 1.2s infinite;
+}
+@keyframes loading{
+  0%{background-position:-100px}
+  100%{background-position:200px}
 }
 </style>
 </head>
 
 <body>
 
+<div class="header">
+  <h1>📅 Jadwal Booking</h1>
+  <p>Lihat ketersediaan lapangan secara realtime</p>
+</div>
+
+<div class="container">
 <div class="card">
 
-<h2>📅 Jadwal Booking</h2>
-
 <div class="filter">
-  <input id="search" placeholder="Cari nama / lapangan...">
+  <input id="search" placeholder="Cari nama / lapangan">
   <input type="date" id="tanggal">
 </div>
 
-<div id="list"></div>
+<div id="list">
+  <div class="skeleton"></div>
+  <div class="skeleton"></div>
+  <div class="skeleton"></div>
+</div>
 
-<button onclick="back()" style="
-margin-top:10px;
-width:100%;
-padding:12px;
-border:none;
-border-radius:10px;
-background:#fff;
-border:1px solid #667eea;
-color:#667eea;
-cursor:pointer">
-← Kembali
-</button>
+<button class="btn" onclick="back()">← Kembali</button>
 
+</div>
 </div>
 
 <script>
-const API="https://script.google.com/macros/s/AKfycbx24Z-3mlubF4V84Jg8eB_WYX9PysYiLne96a-MMbPhz_6ovGsney-heoibrwaovChf/exec"; // <-- GANTI
+const API="https://script.google.com/macros/s/AKfycbx24Z-3mlubF4V84Jg8eB_WYX9PysYiLne96a-MMbPhz_6ovGsney-heoibrwaovChf/exec";
 
 let all=[];
 
-// LOAD DATA
-async function load(){
+// FORMAT
+function formatDate(v){
+  let d=new Date(v);
+  if(isNaN(d)) return "-";
+  return d.toLocaleDateString("id-ID",{day:"2-digit",month:"short"});
+}
 
+function formatTime(v){
+  if(typeof v==="string" && v.includes(":")) return v;
+  let d=new Date(v);
+  if(isNaN(d)) return "-";
+  return d.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"});
+}
+
+// LOAD
+async function load(){
+ try{
   let r=await fetch(API,{
     method:"POST",
+    headers:{ "Content-Type":"text/plain;charset=utf-8"},
     body:JSON.stringify({action:"jadwal"})
   });
 
   let d=await r.json();
 
   if(d.status!=="success"){
-    list.innerHTML="<div class='empty'>❌ Gagal load data</div>";
+    list.innerHTML="<div class='empty'>❌ Gagal load</div>";
     return;
   }
 
   all=d.data;
   render();
+
+ }catch{
+  list.innerHTML="<div class='empty'>❌ Server error</div>";
+ }
 }
 
-// FORMAT TANGGAL (FIX INVALID DATE)
-function formatTanggal(t){
-  if(!t) return "-";
-
-  try{
-    let d=new Date(t);
-    if(isNaN(d)) return "-";
-
-    return d.toLocaleDateString("id-ID",{
-      day:"2-digit",
-      month:"long",
-      year:"numeric"
-    });
-  }catch{
-    return "-";
-  }
-}
-
-// RENDER DATA
+// RENDER
 function render(){
 
-  let key = search.value.toLowerCase();
-  let tgl = tanggal.value;
+ let key=search.value.toLowerCase();
+ let tgl=tanggal.value;
 
-  let html="";
+ let html="";
 
-  all.forEach(i=>{
+ all.forEach(i=>{
 
-    let cocok =
-      (i.nama||"").toLowerCase().includes(key) ||
-      (i.lapangan||"").toLowerCase().includes(key);
+  let cocok =
+   (i.nama||"").toLowerCase().includes(key) ||
+   (i.lapangan||"").toLowerCase().includes(key);
 
-    // FILTER TANGGAL
-    if(tgl){
-      let d = i.tanggalMulai;
-      if(d !== tgl) cocok=false;
-    }
+  if(tgl && i.tanggalMulai!==tgl) cocok=false;
 
-    if(cocok){
-      html += `
-      <div class="item">
-        <div class="badge">${i.lapangan}</div>
-        <div><b>👤 ${i.nama}</b></div>
-        <small>📅 ${formatTanggal(i.tanggalMulai)} s/d ${formatTanggal(i.tanggalSelesai)}</small><br>
-        <small>⏰ ${i.jamMulai} - ${i.jamSelesai}</small>
-      </div>`;
-    }
+  if(cocok){
 
-  });
+    let badgeClass = i.lapangan.includes("Basket") ? "basket" : "sepak";
 
-  list.innerHTML = html || "<div class='empty'>Tidak ada data</div>";
+    html+=`
+    <div class="item">
+      <div class="badge ${badgeClass}">${i.lapangan}</div>
+      <div class="nama">👤 ${i.nama}</div>
+      <div class="info">📅 ${formatDate(i.tanggalMulai)} - ${formatDate(i.tanggalSelesai)}</div>
+      <div class="info">⏰ ${formatTime(i.jamMulai)} - ${formatTime(i.jamSelesai)}</div>
+    </div>`;
+  }
+
+ });
+
+ list.innerHTML = html || "<div class='empty'>Tidak ada jadwal</div>";
 }
 
 // EVENT
-search.oninput = render;
-tanggal.onchange = render;
+search.oninput=render;
+tanggal.onchange=render;
 
-// BACK
 function back(){
-  location.href="index.html";
+ location.href="index.html";
 }
 
-// INIT
 load();
 </script>
 
