@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sewa Lapangan</title>
 
 <style>
@@ -14,41 +13,62 @@ body{
   justify-content:center;
   align-items:center;
   min-height:100vh;
+  padding:20px;
 }
 
+/* CARD */
 .card{
   background:#fff;
   width:100%;
   max-width:420px;
-  padding:28px;
+  padding:25px;
   border-radius:20px;
   box-shadow:0 20px 40px rgba(0,0,0,.2);
 }
 
-h2{text-align:center;margin-bottom:10px;}
-.subtitle{text-align:center;font-size:12px;color:#777;margin-bottom:20px;}
-
-.steps{display:flex;justify-content:center;gap:10px;margin-bottom:20px;}
-.step{
-  width:28px;height:28px;border-radius:50%;
-  background:#ddd;display:flex;align-items:center;justify-content:center;
+/* TITLE */
+h2{
+  text-align:center;
+  margin-bottom:5px;
 }
-.step.active{background:#667eea;color:#fff;}
-.step.done{background:#22c55e;color:#fff;}
+.subtitle{
+  text-align:center;
+  font-size:12px;
+  color:#777;
+  margin-bottom:20px;
+}
 
-.form-group{margin-bottom:14px}
-label{font-size:13px;color:#555}
+/* FORM */
+.form-group{
+  margin-bottom:14px;
+}
+
+label{
+  font-size:13px;
+  color:#555;
+}
 
 input,select,textarea{
   width:100%;
   padding:11px;
   border-radius:10px;
   border:1px solid #ddd;
-  margin-top:4px;
+  margin-top:5px;
+  font-size:14px;
 }
 
-.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+input:focus,select:focus,textarea:focus{
+  border-color:#667eea;
+  outline:none;
+}
 
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+/* BUTTON */
 .btn{
   width:100%;
   padding:13px;
@@ -57,35 +77,54 @@ input,select,textarea{
   background:linear-gradient(135deg,#667eea,#764ba2);
   color:#fff;
   font-weight:bold;
-  margin-top:10px;
   cursor:pointer;
+  margin-top:10px;
 }
 
-.btn-outline{
-  background:#fff;
-  border:1px solid #667eea;
-  color:#667eea;
+.btn:hover{
+  opacity:.9;
 }
-
-.alert{font-size:12px;color:red;margin-bottom:10px;}
-
-.qris{width:100%;border-radius:15px;margin-bottom:10px;}
-
-.hidden{display:none}
 
 /* LOADER */
 .loader{
   border:4px solid #eee;
   border-top:4px solid #667eea;
-  border-radius:50%;
   width:30px;height:30px;
+  border-radius:50%;
   animation:spin 1s linear infinite;
   margin:10px auto;
 }
-@keyframes spin{100%{transform:rotate(360deg)}}
 
-.success{text-align:center}
-.success h3{color:#22c55e}
+@keyframes spin{
+  100%{transform:rotate(360deg)}
+}
+
+/* STEP */
+.step-title{
+  text-align:center;
+  font-size:14px;
+  margin-bottom:10px;
+  color:#555;
+}
+
+/* QRIS */
+.qris{
+  width:100%;
+  border-radius:15px;
+  margin:10px 0;
+}
+
+/* SUCCESS */
+.success{
+  text-align:center;
+}
+.success h3{
+  color:#22c55e;
+  margin-bottom:10px;
+}
+
+/* UTIL */
+.hidden{display:none}
 </style>
 </head>
 
@@ -95,11 +134,6 @@ input,select,textarea{
 
 <h2>🏟️ Booking Lapangan</h2>
 <div class="subtitle">Isi data → bayar → selesai</div>
-
-<div class="steps">
-  <div id="s1" class="step active">1</div>
-  <div id="s2" class="step">2</div>
-</div>
 
 <!-- STEP 1 -->
 <div id="step1">
@@ -126,8 +160,6 @@ input,select,textarea{
 </div>
 </div>
 
-<div id="warning" class="alert"></div>
-
 <div class="form-group">
 <label>Lapangan</label>
 <select id="lapangan">
@@ -153,11 +185,10 @@ input,select,textarea{
 <textarea id="keterangan" placeholder="Contoh: Turnamen ABCD"></textarea>
 </div>
 
-<button class="btn" id="btnCek" onclick="cek()">Cek Ketersediaan</button>
+<button class="btn" onclick="cek()">Cek Ketersediaan</button>
 
-<div id="loadingCek" class="hidden">
+<div id="loading1" class="hidden">
 <div class="loader"></div>
-<p style="text-align:center;font-size:12px">Mengecek...</p>
 </div>
 
 </div>
@@ -165,20 +196,22 @@ input,select,textarea{
 <!-- STEP 2 -->
 <div id="step2" class="hidden">
 
-<h3 style="text-align:center">💳 Pembayaran QRIS</h3>
+<div class="step-title">💳 Pembayaran QRIS</div>
 
 <img src="https://i.ibb.co/3WQd9rP/qris.png" class="qris">
 
+<div class="form-group">
+<label>Upload Bukti</label>
 <input type="file" id="bukti">
-
-<button class="btn" id="btnSubmit" onclick="submit()">Bayar & Booking</button>
-
-<div id="loadingSubmit" class="hidden">
-<div class="loader"></div>
-<p style="text-align:center;font-size:12px">Menyimpan...</p>
 </div>
 
-<button class="btn btn-outline" onclick="back()">Kembali</button>
+<button class="btn" onclick="submit()">Bayar & Booking</button>
+
+<div id="loading2" class="hidden">
+<div class="loader"></div>
+</div>
+
+<button class="btn" style="background:#eee;color:#333" onclick="back()">Kembali</button>
 
 </div>
 
@@ -197,19 +230,20 @@ const API="https://script.google.com/macros/s/AKfycbx24Z-3mlubF4V84Jg8eB_WYX9Pys
 let data={};
 
 // JAM
-function renderJam(){
- let html="";
+function jam(){
+ let h="";
  for(let i=7;i<=22;i++){
   let j=(i<10?"0":"")+i+":00";
-  html+=`<option>${j}</option>`;
+  h+=`<option>${j}</option>`;
  }
- jamMulai.innerHTML=html;
- jamSelesai.innerHTML=html;
+ jamMulai.innerHTML=h;
+ jamSelesai.innerHTML=h;
 }
 
-// AMBIL DATA
-function ambil(){
- return {
+// CEK
+async function cek(){
+
+ data={
   nama:nama.value,
   nohp:nohp.value,
   tanggalMulai:tanggalMulai.value,
@@ -219,33 +253,21 @@ function ambil(){
   lapangan:lapangan.value,
   keterangan:keterangan.value
  };
-}
 
-// CEK
-async function cek(){
-
- data=ambil();
-
- if(!data.nama || !data.nohp){
-  alert("Lengkapi data");
-  return;
- }
-
- btnCek.style.display="none";
- loadingCek.classList.remove("hidden");
+ loading1.classList.remove("hidden");
 
  try{
   let r=await fetch(API,{
     method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({...data,action:"check"})
+    headers:{
+      "Content-Type":"text/plain;charset=utf-8"
+    },
+    body: JSON.stringify({...data,action:"check"})
   });
 
   let d=await r.json();
 
-  console.log(d);
-
-  if(d.status==="available"){
+  if(d.status=="available"){
     step1.classList.add("hidden");
     step2.classList.remove("hidden");
   }else{
@@ -253,11 +275,10 @@ async function cek(){
   }
 
  }catch(e){
-  alert("Server error / koneksi gagal");
+  alert("Koneksi gagal");
  }
 
- btnCek.style.display="block";
- loadingCek.classList.add("hidden");
+ loading1.classList.add("hidden");
 }
 
 // BACK
@@ -270,39 +291,35 @@ function back(){
 async function submit(){
 
  let file=bukti.files[0];
- if(!file){alert("Upload bukti dulu");return;}
+ if(!file){alert("Upload bukti");return;}
 
- btnSubmit.style.display="none";
- loadingSubmit.classList.remove("hidden");
+ loading2.classList.remove("hidden");
 
  let reader=new FileReader();
 
  reader.onload=async ()=>{
   data.bukti=reader.result;
 
-  try{
-    let r=await fetch(API,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({...data,action:"submit"})
-    });
+  let r=await fetch(API,{
+    method:"POST",
+    headers:{
+      "Content-Type":"text/plain;charset=utf-8"
+    },
+    body: JSON.stringify({...data,action:"submit"})
+  });
 
-    let d=await r.json();
+  let d=await r.json();
 
-    step2.classList.add("hidden");
-    success.classList.remove("hidden");
+  step2.classList.add("hidden");
+  success.classList.remove("hidden");
 
-  }catch(e){
-    alert("Gagal submit");
-  }
-
-  loadingSubmit.classList.add("hidden");
+  loading2.classList.add("hidden");
  };
 
  reader.readAsDataURL(file);
 }
 
-renderJam();
+jam();
 </script>
 
 </body>
