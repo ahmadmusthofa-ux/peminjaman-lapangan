@@ -1,29 +1,184 @@
-<h2>Booking</h2>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sewa Lapangan</title>
 
-<input id="nama" placeholder="Nama">
-<input id="nohp" placeholder="HP">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
 
+body{
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  min-height:100vh;
+  padding:20px;
+}
+
+.card{
+  background:#fff;
+  padding:25px;
+  border-radius:20px;
+  width:100%;
+  max-width:420px;
+  box-shadow:0 20px 40px rgba(0,0,0,.2);
+  animation:fade .5s ease;
+}
+
+h2{
+  text-align:center;
+  margin-bottom:10px;
+}
+
+.subtitle{
+  text-align:center;
+  font-size:12px;
+  color:#777;
+  margin-bottom:20px;
+}
+
+/* STEP */
+.steps{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin-bottom:20px;
+}
+.step{
+  width:30px;height:30px;
+  border-radius:50%;
+  background:#ddd;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:13px;
+}
+.step.active{background:#667eea;color:#fff;}
+.step.done{background:#22c55e;color:#fff;}
+
+/* FORM */
+label{
+  font-size:12px;
+  margin-top:10px;
+  display:block;
+  color:#555;
+}
+
+input,select{
+  width:100%;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #ddd;
+  margin-top:5px;
+  font-size:14px;
+}
+
+select option:disabled{color:red}
+
+/* BUTTON */
+.btn{
+  width:100%;
+  margin-top:15px;
+  padding:12px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  color:#fff;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.btn-outline{
+  background:#fff;
+  border:1px solid #667eea;
+  color:#667eea;
+}
+
+/* ALERT */
+.alert{
+  margin-top:10px;
+  font-size:12px;
+  color:red;
+}
+
+/* QRIS */
+.qris{
+  width:100%;
+  border-radius:15px;
+  margin-top:10px;
+}
+
+.hidden{display:none}
+
+@keyframes fade{
+  from{opacity:0; transform:translateY(20px)}
+  to{opacity:1; transform:translateY(0)}
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<h2>🏟️ Booking Lapangan</h2>
+<div class="subtitle">Isi data → bayar → selesai</div>
+
+<div class="steps">
+  <div id="s1" class="step active">1</div>
+  <div id="s2" class="step">2</div>
+</div>
+
+<!-- STEP 1 -->
+<div id="step1">
+
+<label>Nama</label>
+<input id="nama" placeholder="Nama lengkap">
+
+<label>No HP</label>
+<input id="nohp" placeholder="08xxxx">
+
+<label>Tanggal</label>
 <input type="date" id="tanggalMulai">
-<div id="warning"></div>
+<div id="warning" class="alert"></div>
 
+<label>Lapangan</label>
 <select id="lapangan">
 <option>Lapangan Basket</option>
 <option>Lapangan Sepakbola</option>
 </select>
 
+<label>Jam Mulai</label>
 <select id="jamMulai"></select>
+
+<label>Jam Selesai</label>
 <select id="jamSelesai"></select>
 
-<button onclick="cek()">Cek</button>
+<button class="btn" onclick="cek()">Cek Ketersediaan</button>
 
-<div id="step2" style="display:none">
-<img src="https://i.ibb.co/3WQd9rP/qris.png" width="200">
+</div>
+
+<!-- STEP 2 -->
+<div id="step2" class="hidden">
+
+<h3 style="text-align:center;margin-bottom:10px;">💳 Pembayaran QRIS</h3>
+
+<img src="https://i.ibb.co/3WQd9rP/qris.png" class="qris">
+
+<label>Upload Bukti</label>
 <input type="file" id="bukti">
-<button onclick="submit()">Bayar & Booking</button>
+
+<button class="btn" onclick="submit()">✅ Bayar & Booking</button>
+<button class="btn btn-outline" onclick="back()">← Kembali</button>
+
+</div>
+
 </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbx24Z-3mlubF4V84Jg8eB_WYX9PysYiLne96a-MMbPhz_6ovGsney-heoibrwaovChf/exec";
+const API = "URL_WEB_APP";
 
 let data={};
 let fullDates=[];
@@ -37,14 +192,18 @@ async function loadTanggal(){
   fullDates=d.data;
 }
 
+// EVENT TANGGAL
 tanggalMulai.onchange=()=>{
   let t=new Date(tanggalMulai.value).toDateString();
+
   if(fullDates.includes(t)){
-    warning.innerHTML="❌ Tanggal penuh";
+    warning.innerHTML="❌ Tanggal sudah penuh";
     tanggalMulai.value="";
     return;
+  } else {
+    warning.innerHTML="";
+    loadJam();
   }
-  loadJam();
 };
 
 // LOAD JAM
@@ -62,8 +221,10 @@ async function loadJam(){
   renderJam(d.data);
 }
 
+// RENDER JAM
 function renderJam(block){
   let html="";
+
   for(let i=7;i<=22;i++){
     let j=(i<10?"0":"")+i+":00";
     let disabled=false;
@@ -74,12 +235,16 @@ function renderJam(block){
       }
     });
 
-    html+=`<option ${disabled?"disabled":""}>${j} ${disabled?"❌":""}</option>`;
+    html+=`<option ${disabled?"disabled":""}>
+      ${j} ${disabled?"❌":""}
+    </option>`;
   }
+
   jamMulai.innerHTML=html;
   jamSelesai.innerHTML=html;
 }
 
+// AMBIL DATA
 function ambil(){
   return {
     nama:nama.value,
@@ -92,20 +257,45 @@ function ambil(){
   }
 }
 
+// CEK
 async function cek(){
   data=ambil();
-  let r=await fetch(API,{method:"POST",body:JSON.stringify({...data,action:"check"})});
+
+  let r=await fetch(API,{
+    method:"POST",
+    body:JSON.stringify({...data,action:"check"})
+  });
+
   let d=await r.json();
 
   if(d.status==="available"){
-    step2.style.display="block";
+    step1.classList.add("hidden");
+    step2.classList.remove("hidden");
+    s1.classList.remove("active");
+    s1.classList.add("done");
+    s2.classList.add("active");
   }else{
     alert(d.message);
   }
 }
 
+// BACK
+function back(){
+  step2.classList.add("hidden");
+  step1.classList.remove("hidden");
+  s2.classList.remove("active");
+  s1.classList.add("active");
+}
+
+// SUBMIT
 async function submit(){
   let file=bukti.files[0];
+
+  if(!file){
+    alert("Upload bukti dulu!");
+    return;
+  }
+
   let reader=new FileReader();
 
   reader.onload=async ()=>{
@@ -124,5 +314,10 @@ async function submit(){
   reader.readAsDataURL(file);
 }
 
+// INIT
 loadTanggal();
+renderJam([]);
 </script>
+
+</body>
+</html>
