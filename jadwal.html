@@ -165,6 +165,17 @@ function formatTime(v){
   return d.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"});
 }
 
+// 🔥 CEK EXPIRED
+function isExpired(tanggalSelesai){
+  let today = new Date();
+  today.setHours(0,0,0,0);
+
+  let end = new Date(tanggalSelesai);
+  end.setHours(0,0,0,0);
+
+  return end < today;
+}
+
 // LOAD
 async function load(){
  try{
@@ -199,6 +210,9 @@ function render(){
 
  all.forEach(i=>{
 
+  // ⛔ AUTO HILANG JIKA SUDAH LEWAT
+  if(isExpired(i.tanggalSelesai)) return;
+
   let cocok =
    (i.nama||"").toLowerCase().includes(key) ||
    (i.lapangan||"").toLowerCase().includes(key);
@@ -230,6 +244,9 @@ tanggal.onchange=render;
 function back(){
  location.href="index.html";
 }
+
+// 🔥 AUTO REFRESH
+setInterval(load, 30000);
 
 load();
 </script>
