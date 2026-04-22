@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sewa Lapangan</title>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -11,11 +12,47 @@
 
 body{
   background:linear-gradient(135deg,#667eea,#764ba2);
-  display:flex;
-  justify-content:center;
-  align-items:center;
   min-height:100vh;
   padding:20px;
+}
+
+/* NAVBAR */
+.navbar{
+  max-width:420px;
+  margin:0 auto 15px auto;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  color:#fff;
+}
+
+.nav-title{
+  font-weight:bold;
+  font-size:16px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.nav-btn{
+  background:#fff;
+  color:#667eea;
+  border:none;
+  padding:8px 12px;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:12px;
+  font-weight:bold;
+}
+
+/* LOGO */
+.logo{
+  width:60px;
+  height:60px;
+  object-fit:contain;
+  display:block;
+  margin:0 auto 10px auto;
+  filter: drop-shadow(0 5px 10px rgba(102,126,234,0.4));
 }
 
 /* CARD */
@@ -23,6 +60,7 @@ body{
   background:#fff;
   width:100%;
   max-width:420px;
+  margin:auto;
   padding:25px;
   border-radius:20px;
   box-shadow:0 20px 40px rgba(0,0,0,.2);
@@ -82,7 +120,15 @@ input:focus,select:focus,textarea:focus{border-color:#667eea;outline:none;}
 
 <body>
 
+<div class="navbar">
+  <div class="nav-title">🏟️ Booking</div>
+  <button class="nav-btn" onclick="location.href='index.html'">🏠 Beranda</button>
+</div>
+
 <div class="card">
+
+  <img src="https://i.ibb.co.com/6RvWJBPS/dd99ebcb-3875-4e56-bfd2-4ac6a776c6e4-removebg-preview.png" class="logo">
+
   <h2>🏟️ Booking Lapangan</h2>
   <div class="subtitle">Isi data → bayar → selesai</div>
 
@@ -111,8 +157,8 @@ input:focus,select:focus,textarea:focus{border-color:#667eea;outline:none;}
     <div class="form-group">
       <label>Lapangan</label>
       <select id="lapangan">
-        <option>Lapangan Basket</option>
-        <option>Lapangan Sepakbola</option>
+        <option>Lapangan Basket 1</option>
+        <option>Lapangan Basket 2</option>
       </select>
     </div>
 
@@ -142,14 +188,18 @@ input:focus,select:focus,textarea:focus{border-color:#667eea;outline:none;}
   <div id="step2" class="hidden">
     <div class="step-title">💳 Pembayaran QRIS</div>
     <img src="https://i.ibb.co.com/CKsJvZDp/QR-SEWA-LAP-BASKET-OUTDOOR-1775708794.png" class="qris">
+
     <div class="form-group">
       <label>Upload Bukti</label>
       <input type="file" id="bukti" accept="image/*">
     </div>
+
     <button class="btn" onclick="submit()">Bayar & Booking Sekarang</button>
+
     <div id="loading2" class="hidden">
       <div class="loader"></div>
     </div>
+
     <button class="btn" style="background:#eee;color:#333" onclick="back()">Kembali</button>
   </div>
 
@@ -165,115 +215,125 @@ const API="https://script.google.com/macros/s/AKfycbx24Z-3mlubF4V84Jg8eB_WYX9Pys
 
 let data={};
 
-// JAM GENERATOR
 function initJam(){
-  let h="";
-  for(let i=7;i<=22;i++){
-    let j=(i<10?"0":"")+i+":00";
-    h+=`<option>${j}</option>`;
-  }
-  document.getElementById('jamMulai').innerHTML=h;
-  document.getElementById('jamSelesai').innerHTML=h;
+ let h="";
+ for(let i=7;i<=22;i++){
+  let j=(i<10?"0":"")+i+":00";
+  h+=`<option>${j}</option>`;
+ }
+ jamMulai.innerHTML=h;
+ jamSelesai.innerHTML=h;
 }
 
-// CEK KETERSEDIAAN
+// 🔥 CEK OVERLAP
+function overlap(a1,a2,b1,b2){
+ return a1 < b2 && a2 > b1;
+}
+
+// 🔥 CEK JADWAL TETAP
+function cekJadwalTetap(tanggal, jamMulai, jamSelesai){
+ let hari = new Date(tanggal).getDay();
+
+ if(hari === 1 && overlap(jamMulai,jamSelesai,"15:30","18:00"))
+  return "Mata Kuliah Korfball Senin (15:30 - 18:00)";
+
+ if(hari === 3 && overlap(jamMulai,jamSelesai,"18:00","21:00"))
+  return "Mata kuliah Korfball Rabu (18:00 - 21:00)";
+
+ if(hari === 4 && overlap(jamMulai,jamSelesai,"19:00","21:00"))
+  return "UKM Basket Kamis (19:00 - 21:00)";
+
+ return null;
+}
+
 async function cek(){
-  // Validasi Input
-  if(!nama.value || !nohp.value || !tanggalMulai.value){
-    Swal.fire('Eits!', 'Isi dulu semua datanya ya!', 'warning');
-    return;
+ if(!nama.value || !nohp.value || !tanggalMulai.value){
+  Swal.fire('Eits!', 'Isi dulu semua datanya ya!', 'warning');
+  return;
+ }
+
+ // 🔥 CEK JADWAL TETAP DULU
+ let bentrokTetap = cekJadwalTetap(tanggalMulai.value, jamMulai.value, jamSelesai.value);
+
+ if(bentrokTetap){
+  Swal.fire('Bentrok!', bentrokTetap, 'error');
+  return;
+ }
+
+ data={
+  nama:nama.value,
+  nohp:nohp.value,
+  tanggalMulai:tanggalMulai.value,
+  tanggalSelesai:tanggalSelesai.value,
+  jamMulai:jamMulai.value,
+  jamSelesai:jamSelesai.value,
+  lapangan:lapangan.value,
+  keterangan:keterangan.value
+ };
+
+ loading1.classList.remove("hidden");
+
+ try{
+  let r=await fetch(API,{
+    method:"POST",
+    body: JSON.stringify({...data,action:"check"})
+  });
+
+  let d=await r.json();
+
+  if(d.status=="available"){
+    Swal.fire('Tersedia!', '', 'success');
+    step1.classList.add("hidden");
+    step2.classList.remove("hidden");
+  }else{
+    Swal.fire('Bentrok!', d.message, 'error');
   }
 
-  data={
-    nama:nama.value,
-    nohp:nohp.value,
-    tanggalMulai:tanggalMulai.value,
-    tanggalSelesai:tanggalSelesai.value,
-    jamMulai:jamMulai.value,
-    jamSelesai:jamSelesai.value,
-    lapangan:lapangan.value,
-    keterangan:keterangan.value
-  };
+ }catch(e){
+  Swal.fire('Error', 'Server tidak merespon', 'error');
+ }
 
-  loading1.classList.remove("hidden");
-
-  try{
-    let r=await fetch(API,{
-      method:"POST",
-      body: JSON.stringify({...data,action:"check"})
-    });
-
-    let d=await r.json();
-
-    if(d.status=="available"){
-      Swal.fire({
-        icon: 'success',
-        title: 'Jadwal Tersedia!',
-        text: 'Silakan lanjut ke pembayaran.',
-        timer: 1500,
-        showConfirmButton: false
-      });
-      setTimeout(() => {
-        step1.classList.add("hidden");
-        step2.classList.remove("hidden");
-      }, 1500);
-    }else{
-      // NOTIFIKASI BENTROK KEREN
-      Swal.fire({
-        icon: 'error',
-        title: 'Jadwal Bentrok!',
-        text: d.message || 'Maaf, waktu tersebut sudah dibooking.',
-        confirmButtonColor: '#667eea'
-      });
-    }
-
-  }catch(e){
-    Swal.fire('Error', 'Gagal terhubung ke server', 'error');
-  }
-  loading1.classList.add("hidden");
+ loading1.classList.add("hidden");
 }
 
 function back(){
-  step2.classList.add("hidden");
-  step1.classList.remove("hidden");
+ step2.classList.add("hidden");
+ step1.classList.remove("hidden");
 }
 
-// SUBMIT FINAL
 async function submit(){
-  let fileInput = document.getElementById('bukti');
-  let file = fileInput.files[0];
-  if(!file){
-    Swal.fire('Bukti?', 'Jangan lupa upload bukti bayarnya ya!', 'question');
-    return;
-  }
+ let file=bukti.files[0];
+ if(!file){
+  Swal.fire('Upload bukti dulu!', '', 'warning');
+  return;
+ }
 
-  loading2.classList.remove("hidden");
+ loading2.classList.remove("hidden");
 
-  let reader=new FileReader();
-  reader.onload=async ()=>{
-    data.bukti=reader.result;
+ let reader=new FileReader();
 
-    try {
-      let r=await fetch(API,{
-        method:"POST",
-        body: JSON.stringify({...data,action:"submit"})
-      });
+ reader.onload=async ()=>{
+  data.bukti=reader.result;
 
-      let d=await r.json();
+  await fetch(API,{
+    method:"POST",
+    body: JSON.stringify({...data,action:"submit"})
+  });
 
-      if(d.status == "success") {
-        step2.classList.add("hidden");
-        success.classList.remove("hidden");
-        Swal.fire('Berhasil!', 'Booking kamu sudah masuk.', 'success');
-      } else {
-        Swal.fire('Gagal', d.message, 'error');
-      }
-    } catch(e) {
-      Swal.fire('Error', 'Gagal mengirim data', 'error');
-    }
-    loading2.classList.add("hidden");
-  };
-  reader.readAsDataURL(file);
+  Swal.fire({
+    title: 'Berhasil!',
+    text: 'Booking berhasil disimpan 🎉',
+    icon: 'success',
+    confirmButtonText: 'OK'
+  }).then(()=>{
+    step2.classList.add("hidden");
+    success.classList.remove("hidden");
+  });
+
+  loading2.classList.add("hidden");
+ };
+
+ reader.readAsDataURL(file);
 }
 
 initJam();
